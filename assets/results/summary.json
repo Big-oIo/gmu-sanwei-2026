@@ -1,0 +1,15 @@
+{
+  "n_queries": 6,
+  "self_top1_hits": 6,
+  "self_top1_rate": 1.0,
+  "mean_self_rank": 1.0,
+  "self_scores": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "all_zero_score": true
+}

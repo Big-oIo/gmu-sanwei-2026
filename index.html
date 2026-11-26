@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三维相似性搜索平台 · 项目全景</title>
+<script src="docs-data.js"></script>
+<style>
+  :root{
+    --bg:#12131a; --bg2:#171822; --card:#1d1e29; --card2:#232433;
+    --border:#2c2d3a; --border2:#3a3b4d;
+    --text:#e8e8f0; --muted:#a0a1b0; --dim:#6b6c7d;
+    --blue:#5b8cff; --blue2:#8fb0ff; --purple:#a78bfa; --teal:#2dd4bf;
+    --green:#4ade80; --amber:#fbbf24; --red:#f87171;
+    --radius:14px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;font-size:15px;-webkit-font-smoothing:antialiased}
+  a{color:var(--blue2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{position:sticky;top:0;z-index:100;background:rgba(18,19,26,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .nav-inner{max-width:1160px;margin:0 auto;padding:0 20px;display:flex;align-items:center;height:62px;gap:8px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;color:var(--text)}
+  .logo .dot{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0}
+  .nav-links{display:flex;gap:2px;margin-left:auto}
+  .nav-links button{background:none;border:none;color:var(--muted);font-size:14px;padding:8px 14px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .nav-links button:hover{color:var(--text);background:var(--card2)}
+  .nav-links button.active{color:var(--text);background:var(--card2);font-weight:600}
+  .burger{display:none;background:none;border:none;color:var(--text);font-size:24px;cursor:pointer;margin-left:auto;padding:4px}
+  main{max-width:1160px;margin:0 auto;padding:28px 20px 80px}
+  .page{display:none}
+  .page.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.5px}
+  h2{font-size:20px;font-weight:700;margin:34px 0 14px;letter-spacing:-.3px}
+  h3{font-size:16px;font-weight:600;margin:20px 0 10px}
+  p{margin:10px 0;color:var(--muted)}
+  .lead{font-size:17px;color:var(--text)}
+  .sub{color:var(--muted);font-size:14px}
+  .hero{background:linear-gradient(135deg,#1b2340,#241b3a);border:1px solid var(--border2);border-radius:20px;padding:40px 32px;margin-bottom:28px}
+  .hero h1{font-size:30px;margin-bottom:10px}
+  .hero .tag{display:inline-block;background:rgba(91,140,255,.15);color:var(--blue2);font-size:13px;padding:4px 12px;border-radius:20px;margin-bottom:14px}
+  .hero .badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .hero .badge{background:var(--card2);border:1px solid var(--border);padding:6px 14px;border-radius:20px;font-size:13px;color:var(--text)}
+  .grid{display:grid;gap:16px}
+  .grid.cols-2{grid-template-columns:1fr 1fr}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+  .grid.cols-4{grid-template-columns:repeat(4,1fr)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:border-color .15s}
+  .card:hover{border-color:var(--border2)}
+  .card h3{margin:0 0 8px}
+  .card .kpi{font-size:30px;font-weight:700;margin:4px 0 2px}
+  .card .lbl{color:var(--dim);font-size:13px}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:3px 10px;border-radius:20px;font-weight:500}
+  .status.done{background:rgba(74,222,128,.12);color:var(--green)}
+  .status.doing{background:rgba(251,191,36,.12);color:var(--amber)}
+  .status.todo{background:rgba(248,113,113,.12);color:var(--red)}
+  .status.hold{background:rgba(160,161,176,.12);color:var(--muted)}
+  .dot2{width:7px;height:7px;border-radius:50%;background:currentColor}
+  .concept{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+  .concept b{color:var(--blue2)}
+  .concept p{font-size:14px;margin:6px 0 0}
+  .timeline{position:relative;padding-left:26px}
+  .timeline::before{content:"";position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:var(--border2)}
+  .tl-item{position:relative;margin-bottom:22px}
+  .tl-item::before{content:"";position:absolute;left:-24px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--blue);border:2px solid var(--bg)}
+  .tl-item .ph{font-size:12px;color:var(--dim);margin-bottom:2px}
+  .tl-item .t{font-weight:600;color:var(--text)}
+  .tl-item .d{font-size:14px;color:var(--muted);margin-top:3px}
+
+  /* 阶段 + 步骤 */
+  .phase{border:1px solid var(--border2);border-radius:16px;padding:20px 22px;margin:22px 0;background:var(--bg2)}
+  .phase .ph-t{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px}
+  .phase .ph-num{background:var(--blue);color:#fff;border-radius:8px;padding:2px 10px;font-size:13px;font-weight:600;flex-shrink:0}
+  .phase .ph-d{font-size:13.5px;color:var(--muted);margin-bottom:14px}
+  .step{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:10px 0}
+  .step .st-t{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-weight:600;color:var(--text);font-size:15px}
+  .step .st-num{color:var(--blue2);font-weight:700;flex-shrink:0}
+  .step .who{font-size:12px;padding:2px 10px;border-radius:12px;background:rgba(91,140,255,.14);color:var(--blue2);font-weight:600}
+  .step .row{margin-top:8px;font-size:13.5px}
+  .step .row b{color:var(--text);font-weight:600}
+  .step .row .v{color:var(--muted)}
+  .step .goal{margin-top:6px;font-size:13.5px}
+  .step .goal b{color:var(--green);font-weight:600}
+  /* 阶段内成员分工 */
+  .stage-roles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0 16px}
+  .stage-roles .sr{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px}
+  .stage-roles .sr.main{border-color:var(--blue)}
+  .stage-roles .sr-name{font-weight:600;color:var(--text);font-size:13.5px}
+  .stage-roles .sr.main .sr-name{color:var(--blue2)}
+  .stage-roles .sr-task{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.6}
+  .stage-roles .star{color:var(--amber)}
+
+  /* 时间线图例 + 交付物作用 */
+  .tl-legend{display:flex;flex-wrap:wrap;gap:16px;margin:12px 0 6px;font-size:13px;color:var(--muted)}
+  .tl-legend .lg{display:flex;align-items:center;gap:6px}
+  .tl-legend .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .tl-legend .dot.do{background:var(--amber)}
+  .tl-legend .dot.dt{background:var(--blue2)}
+  .tl-legend .dot.al{background:var(--teal)}
+  .tl-legend .dot.ev{background:var(--purple)}
+  .step .use{margin-top:8px;padding:8px 12px;background:rgba(45,212,191,.08);border-left:3px solid var(--teal);border-radius:6px;font-size:13px;color:var(--muted)}
+  .step .use b{color:var(--teal);font-weight:600}
+  .sr-task b{color:var(--teal);font-weight:600}
+  .use-note{margin-top:6px;padding:9px 12px;background:rgba(45,212,191,.08);border-left:3px solid var(--teal);border-radius:8px;font-size:13.5px;color:var(--muted);line-height:1.6}
+  .use-inline{color:var(--teal);font-size:13px}
+  .pair-tag{display:inline-block;margin:2px 0 10px;padding:4px 12px;background:rgba(91,140,255,.14);border:1px solid var(--blue);border-radius:16px;font-size:13px;color:var(--blue2);font-weight:600}
+  .deputy-tag{display:inline-block;margin-left:8px;padding:2px 10px;background:rgba(255,193,7,.16);border:1px solid var(--amber);border-radius:12px;font-size:11.5px;color:var(--amber);font-weight:600;white-space:nowrap}
+  .stage-group{margin:8px 0;padding:10px 12px;background:var(--card2);border-radius:8px}
+  .stage-group .stage-label{font-weight:600;color:var(--blue2);font-size:13px;margin-bottom:6px}
+  .stage-group ul{list-style:none;padding-left:0;margin:0}
+  .stage-step{margin:4px 0;font-size:13.5px;color:var(--text);line-height:1.5}
+  .step-link{color:var(--text);text-decoration:none;border-bottom:1px dashed var(--border2);transition:color .15s}
+  .step-link:hover{color:var(--blue2);border-bottom-color:var(--blue2)}
+  .dv-name{color:var(--text);font-weight:600}
+  .dv-use{color:var(--muted);font-size:12.5px}
+
+
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0;align-items:center}
+  .search{flex:1;min-width:200px;position:relative}
+  .search input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:11px 14px 11px 38px;border-radius:11px;font-size:14px;font-family:inherit}
+  .search input:focus{outline:none;border-color:var(--blue)}
+  .search .ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:15px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:20px;font-size:13px;cursor:pointer;font-family:inherit}
+  .chip:hover{color:var(--text)}
+  .chip.active{background:rgba(91,140,255,.16);border-color:var(--blue);color:var(--blue2);font-weight:600}
+  .count{color:var(--dim);font-size:13px}
+  .doc-list{display:grid;gap:12px}
+  .doc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:border-color .15s}
+  .doc:hover{border-color:var(--border2)}
+  .doc .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .doc .tt{font-weight:600;font-size:15px;color:var(--text);flex:1;min-width:180px}
+  .doc .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .badge{font-size:12px;padding:2px 9px;border-radius:12px;background:var(--card2);color:var(--muted);border:1px solid var(--border)}
+  .badge.cat-report{background:rgba(167,139,250,.14);color:var(--purple)}
+  .badge.cat-plan{background:rgba(45,212,191,.14);color:var(--teal)}
+  .badge.cat-code{background:rgba(91,140,255,.14);color:var(--blue2)}
+  .badge.cat-doc{background:rgba(74,222,128,.14);color:var(--green)}
+  .badge.cat-data{background:rgba(251,191,36,.14);color:var(--amber)}
+  .doc .sum{font-size:13.5px;color:var(--muted);margin-top:8px}
+  .doc .hint{font-size:12px;color:var(--dim);margin-top:6px}
+  .doc .flink{font-size:13px;color:var(--blue2);margin-top:6px;display:inline-block}
+  .doc .detail{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+  .doc.open .detail{display:block}
+  .doc.open .hint{display:none}
+  .ft-h{color:var(--text);font-size:16px;font-weight:600;margin:18px 0 8px}
+  .ft-p{color:var(--muted);font-size:14px;margin:8px 0}
+  .ft-li{color:var(--muted);font-size:14px;margin:4px 0 4px 18px;list-style:disc}
+  .ft-q{border-left:3px solid var(--blue);padding:6px 14px;color:var(--muted);font-size:14px;margin:10px 0;background:var(--bg2)}
+  .ft-code{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:12.5px;line-height:1.6;color:#c9d1e0;overflow-x:auto;white-space:pre;margin:10px 0}
+  .ft-c{background:var(--card2);padding:1px 6px;border-radius:5px;font-family:ui-monospace,Consolas,monospace;font-size:13px;color:var(--blue2)}
+  .ft-tbl{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+  .ft-tbl td{border:1px solid var(--border2);padding:7px 10px;color:var(--muted);vertical-align:top}
+  .ft-tbl tr:first-child td{background:var(--card2);color:var(--text);font-weight:600}
+  .toc{border-left:2px solid var(--border2);padding-left:18px}
+  .toc .sec{margin:16px 0}
+  .toc .sec-t{font-weight:600;color:var(--blue2);margin-bottom:6px}
+  .toc .item{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:14px;color:var(--muted)}
+  .toc .item a{color:var(--muted)}
+  .toc .item a:hover{color:var(--blue2)}
+  .toc .item .b{font-size:11px;padding:1px 8px;border-radius:10px;background:var(--card2);color:var(--dim);flex-shrink:0}
+  /* ===== 首页交互增强 ===== */
+  .anchor-nav{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 4px;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;position:sticky;top:70px;z-index:40}
+  .anchor-nav a{color:var(--muted);font-size:13px;padding:5px 12px;border-radius:8px;white-space:nowrap}
+  .anchor-nav a:hover{color:var(--blue2);background:var(--card2);text-decoration:none}
+  h2[id]{scroll-margin-top:130px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .step-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 20px;position:relative;overflow:hidden;transition:border-color .15s}
+  .step-card:hover{border-color:var(--blue)}
+  .step-card .no{font-size:44px;font-weight:700;color:var(--blue);opacity:.14;position:absolute;top:6px;right:14px;line-height:1}
+  .step-card .ic{font-size:26px;margin-bottom:10px}
+  .step-card h3{margin:0 0 6px;font-size:16px;color:var(--text)}
+  .step-card p{font-size:13.5px;margin:0;color:var(--muted)}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .tabs button{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-family:inherit}
+  .tabs button:hover{color:var(--text)}
+  .tabs button.active{background:rgba(91,140,255,.16);border-color:var(--blue);color:var(--blue2);font-weight:600}
+  .tab-panel{display:none}
+  .tab-panel.active{display:block;animation:fade .2s ease}
+  .tip{border-bottom:1px dashed var(--blue2);cursor:help;color:var(--text);position:relative}
+  .tip::after{content:attr(data-tip);position:absolute;left:50%;bottom:135%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border2);color:var(--text);font-size:12px;line-height:1.5;padding:7px 11px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:60;max-width:280px;width:max-content;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .tip:hover::after{opacity:1}
+  .progress-block{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+  .progress-item{margin:16px 0}
+  .progress-item .pl{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:7px}
+  .progress-item .pl .pv{color:var(--blue2);font-weight:600}
+  .bar{height:10px;background:var(--bg2);border-radius:6px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .8s ease}
+  .bar .fill.green{background:linear-gradient(90deg,var(--green),var(--teal))}
+  .bar .fill.amber{background:linear-gradient(90deg,var(--amber),#ef9f27)}
+  details.fold{background:var(--card);border:1px solid var(--border);border-radius:12px;margin:10px 0;overflow:hidden}
+  details.fold summary{cursor:pointer;padding:15px 18px;font-weight:600;color:var(--text);list-style:none;display:flex;align-items:center;gap:10px;user-select:none}
+  details.fold summary::-webkit-details-marker{display:none}
+  details.fold summary::before{content:"▸";color:var(--blue2);transition:transform .2s}
+  details.fold[open] summary::before{transform:rotate(90deg)}
+  details.fold .fb{padding:2px 18px 18px}
+  /* 角色详情卡片 */
+  .role-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin:12px 0;overflow:hidden;transition:border-color .15s}
+  .role-card.open{border-color:var(--blue)}
+  .role-head{display:flex;align-items:center;gap:12px;padding:18px 20px;cursor:pointer;user-select:none}
+  .role-head:hover{background:var(--card2)}
+  .role-ic{font-size:26px;flex-shrink:0}
+  .role-name{font-weight:600;font-size:16px;color:var(--text);flex-shrink:0}
+  .role-desc{font-size:13px;color:var(--muted);flex:1;min-width:180px}
+  .role-arrow{color:var(--dim);font-size:14px;transition:transform .25s;flex-shrink:0}
+  .role-card.open .role-arrow{transform:rotate(180deg)}
+  .role-body{display:none;padding:0 22px 22px;border-top:1px solid var(--border)}
+  .role-card.open .role-body{display:block;animation:fade .2s}
+  .role-body h4{font-size:14px;color:var(--blue2);margin:18px 0 8px;font-weight:600;display:flex;align-items:center;gap:6px}
+  .role-body ul,.role-body ol{padding-left:20px;color:var(--muted);font-size:13.5px}
+  .role-body li{margin:7px 0;line-height:1.7}
+  .role-body .task{font-weight:600;color:var(--text)}
+  .role-body .ref{background:var(--bg2);border-left:3px solid var(--amber);border-radius:6px;padding:10px 14px;margin:8px 0;font-size:13px;color:var(--muted)}
+  .flash-target{animation:flashTarget 2.2s ease}
+  @keyframes flashTarget{0%,55%{box-shadow:0 0 0 3px var(--blue);border-radius:16px}100%{box-shadow:0 0 0 0 transparent}}
+  .role-body .map{list-style:none;padding-left:0}
+  .role-body .map li{margin:5px 0}
+  .role-body .map a{display:inline-block;color:var(--blue2);font-size:12.5px;background:var(--card2);border:1px solid var(--border2);padding:1px 10px;border-radius:11px;margin:1px 2px}
+  .role-body .map a:hover{text-decoration:none;border-color:var(--blue)}
+  .role-body .map .ph-tag{display:inline-block;color:var(--teal);font-size:12.5px;background:rgba(45,212,191,.13);padding:1px 10px;border-radius:11px;margin:1px 2px}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card)}
+  .cmp-table th,.cmp-table td{border:1px solid var(--border2);padding:9px 12px;text-align:left;vertical-align:top}
+  .cmp-table th{background:var(--card2);color:var(--text);font-weight:600;white-space:nowrap}
+  .cmp-table td{color:var(--muted)}
+  footer{border-top:1px solid var(--border);padding:24px 20px;color:var(--dim);font-size:13px;text-align:center}
+  @media (max-width:860px){.grid.cols-3,.grid.cols-4{grid-template-columns:1fr 1fr}.grid.cols-2{grid-template-columns:1fr}.steps{grid-template-columns:1fr}}
+  @media (max-width:600px){
+    .grid.cols-3,.grid.cols-4{grid-template-columns:1fr}
+    .nav-links{display:none;position:absolute;top:62px;left:0;right:0;background:var(--bg2);flex-direction:column;border-bottom:1px solid var(--border);padding:8px}
+    .nav-links.open{display:flex}
+    .burger{display:block}
+    h1{font-size:22px}
+    .hero{padding:26px 20px}
+    .hero h1{font-size:24px}
+    .anchor-nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  }
+/* 认领分工 */
+.claim-box{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);}
+.claim-box h4{margin-bottom:8px;}
+.claim-row{display:flex;gap:8px;max-width:420px;}
+.claim-input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:14px;}
+.claim-input:focus{outline:none;border-color:var(--acc, #4c8dff);}
+.claim-btn{padding:8px 18px;border-radius:8px;border:none;background:#2f7d4f;color:#fff;font-size:14px;cursor:pointer;}
+.claim-btn:hover{background:#38945e;}
+.claimed{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:rgba(47,125,79,.15);color:var(--text);font-size:14px;}
+.claimed b{color:#4fd08a;}
+.release-btn{padding:4px 12px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--dim);font-size:12px;cursor:pointer;}
+.release-btn:hover{color:#ff6b6b;border-color:#ff6b6b;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-inner">
+    <div class="logo"><span class="dot">▦</span> 三维相似性搜索平台</div>
+    <nav class="nav-links" id="navLinks">
+      <button data-page="intro" class="active">项目介绍</button>
+      <button data-page="division">模块分工</button>
+      <button data-page="library">资料库</button>
+      <button data-page="index">目录索引</button>
+      <button data-page="plan">执行计划</button>
+    </nav>
+    <button class="burger" id="burger">☰</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ 项目介绍 ============ -->
+  <section class="page active" id="page-intro">
+    <div class="hero">
+      <span class="tag">CAD 三维模型相似检索 · 学生科研项目</span>
+      <h1>让电脑能"看懂"零件，并找出最相似的设计</h1>
+      <p class="lead">把海量三维零件建成可检索的库，上传一个零件，就能从库里找出相似的设计并展示匹配结果与差异。</p>
+      <div class="badges">
+        <span class="badge">📐 技术路线：HOOPS（主线）</span>
+        <span class="badge">🗄️ 数据：10 万 STEP 零件</span>
+        <span class="badge">✅ BRepNet 已跑通</span>
+        <span class="badge">🔧 状态：环境待打通</span>
+      </div>
+    </div>
+
+    <!-- 锚点导航 -->
+    <nav class="anchor-nav">
+      <a href="#quick">三步了解</a>
+      <a href="#bg">项目背景</a>
+      <a href="#goal">项目目标</a>
+      <a href="#plan">项目计划</a>
+      <a href="#route">技术路线</a>
+      <a href="#progress">当前进展</a>
+    </nav>
+
+    <!-- 三步快速了解 -->
+    <h2 id="quick">三步快速了解项目</h2>
+    <p class="sub">第一次来？先看这三张卡片，10 秒掌握全局。</p>
+    <div class="steps">
+      <div class="step-card"><span class="no">1</span><div class="ic">🔍</div><h3>这是什么</h3><p>一个"零件搜索引擎"：上传一个三维零件，系统自动从库里找出最相似的设计。</p></div>
+      <div class="step-card"><span class="no">2</span><div class="ic">🎯</div><h3>为什么做</h3><p>帮工程师少画重复的图——避免重复设计，缩短研发周期，节省成本。</p></div>
+      <div class="step-card"><span class="no">3</span><div class="ic">📍</div><h3>现在到哪</h3><p>检索代码已跑通（6/6 自检索命中）；正在打通 HOOPS 环境，这是唯一卡点。</p></div>
+    </div>
+
+    <!-- 项目背景 -->
+    <h2 id="bg">项目背景</h2>
+    <div class="grid cols-2">
+      <div class="card"><h3>要解决什么问题</h3><p>工程师设计新零件时，常常重复设计已经做过的零件。把这些已有零件建成"可搜索的库"，上传新零件就能自动找到最接近的旧设计，减少重复劳动。</p></div>
+      <div class="card"><h3>技术手段</h3><p>用深度学习把每个三维零件转成一串"数字指纹"（<span class="tip" data-tip="向量：一串数字。形状越像的零件，这串数字越接近">向量</span>）。找相似零件就变成"找最接近的指纹"。</p></div>
+    </div>
+    <div class="grid cols-2">
+      <div class="card"><h3>数据基础</h3><p>项目拥有 <b style="color:var(--text)">10 万个 STEP 零件文件</b>（<span class="tip" data-tip="STEP（.stp）：工业界通用的三维模型格式，用面、边描述形状">STEP 格式</span>），是检索库的核心资产。</p></div>
+      <div class="card"><h3>两条技术路线</h3><p>早期用学术开源的 <b style="color:var(--text)">BRepNet</b> 验证可行性；现切换到商业工具 <b style="color:var(--text)">HOOPS</b>（自带完整检索链路、对接 10 万数据）。</p></div>
+    </div>
+
+    <!-- 项目目标 -->
+    <h2 id="goal">项目目标</h2>
+    <div class="grid cols-3">
+      <div class="card"><div style="font-size:24px">🔧</div><div class="kpi" style="color:var(--blue2);font-size:22px">目标 1</div><div class="lbl">打通环境与授权</div><p style="font-size:13.5px;margin-top:8px">装好 HOOPS AI、配好授权，让它能在机器上跑起来。</p></div>
+      <div class="card"><div style="font-size:24px">🗄️</div><div class="kpi" style="color:var(--purple);font-size:22px">目标 2</div><div class="lbl">建成检索库</div><p style="font-size:13.5px;margin-top:8px">10 万零件批量转成向量、建<span class="tip" data-tip="索引：把向量组织好、方便快速查找的结构，可存盘复用">索引</span>，可反复复用。</p></div>
+      <div class="card"><div style="font-size:24px">🎯</div><div class="kpi" style="color:var(--teal);font-size:22px">目标 3</div><div class="lbl">验证检索能力</div><p style="font-size:13.5px;margin-top:8px">排除自身后检验"能否找到真正相似的零件"，产出评测指标。</p></div>
+    </div>
+
+    <!-- 项目计划（嵌入报告） -->
+    <h2 id="plan">项目计划</h2>
+    <p class="sub">摘自《三维计划报告》，无需跳转即可查看完整计划。</p>
+    <div class="tabs" id="planTabs">
+      <button class="active" data-tab="overview">项目概述</button>
+      <button data-tab="compare">路线对比</button>
+      <button data-tab="tasks">任务分解</button>
+      <button data-tab="division">分工</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-overview">
+      <div class="grid cols-2">
+        <div class="card"><h3>项目要做什么</h3><p>把已有的零件库建成"可检索的索引"：上传一个零件，从库里找出相似设计并展示匹配结果与差异。</p></div>
+        <div class="card"><h3>已定方向</h3><p>团队决定采用 <b style="color:var(--text)">HOOPS</b> 为唯一主线；前方案 <b style="color:var(--text)">BRepNet</b> 作为已完成的历史验证成果归档。</p></div>
+      </div>
+      <div class="grid cols-2">
+        <div class="card"><h3>现在到哪一步</h3><ul style="padding-left:18px;color:var(--muted);font-size:14px"><li>BRepNet 实验包能跑、能测、能出报表（6/6 自检索 Top-1、10 项测试）</li><li>HOOPS 的 4 个权重、5b 示例、10 万数据已核对</li><li>真实零件一次都没跑过；HOOPS 软件未安装</li></ul></div>
+        <div class="card"><h3>卡点与结论</h3><p><b style="color:var(--amber)">卡点：</b>环境（Linux + HOOPS AI + 授权）未打通。</p><p><b style="color:var(--text)">结论：</b>以 HOOPS 为主线，按"打通环境 → 小批量跑通 → 全量入库 → 真实评测"推进。</p></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-compare">
+      <table class="cmp-table">
+        <thead><tr><th>维度</th><th>BRepNet（已归档）</th><th>HOOPS（当前主线）</th></tr></thead>
+        <tbody>
+          <tr><td>本质</td><td>Autodesk 学术开源，面分割模型</td><td>Tech Soft 3D 商业工具包</td></tr>
+          <tr><td>一个零件变成</td><td>每个面一组向量</td><td>整个零件一个向量（1024→512 维）</td></tr>
+          <tr><td>训练规模</td><td>3.6 万模型、22.2MB 权重</td><td>100 万模型对比学习、303 万参数</td></tr>
+          <tr><td>检索方式</td><td>自写脚本（约 290 行、仅 NumPy）</td><td>官方 FAISS 索引、可存盘复用</td></tr>
+          <tr><td>验证进度</td><td>6 个合成模型 6/6 Top-1</td><td>尚未跑真实零件</td></tr>
+          <tr><td>环境</td><td>Python 3.7 / PyTorch 1.7.1（旧、难装）</td><td>Linux 流程，本机未安装</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tab-panel" id="tab-tasks">
+      <p class="sub">按优先级排布的 11 项任务（P0 最关键）。</p>
+      <details class="fold" open><summary>P0 · 最高优先级（先做）</summary><div class="fb">
+        <p>A1 打通 Linux + HOOPS AI 环境与授权 — 唯一硬阻塞</p>
+        <p>A2 核定 10 万 STEP 数据资产与来源</p>
+        <p>A3 产出总体技术方案与任务分解</p>
+        <p>A4 建立小批量试验子集</p>
+        <p>A5 小批量端到端试跑（嵌入→索引→检索）</p>
+      </div></details>
+      <details class="fold"><summary>P1 · 重要（随后做）</summary><div class="fb">
+        <p>A6 管线自检（自检索）</p>
+        <p>A7 全量入库（10 万批量嵌入 + 索引存盘）</p>
+        <p>A8 定义"相似"并标注一小批评测集</p>
+        <p>A9 排除自身的真实相似检索评测</p>
+      </div></details>
+      <details class="fold"><summary>P2 · 可选</summary><div class="fb">
+        <p>A10 稳健性 / 对照实验</p>
+        <p>A11 整理阶段性汇报材料</p>
+      </div></details>
+    </div>
+
+    <div class="tab-panel" id="tab-division">
+      <div class="grid cols-2">
+        <div class="card"><h3>① 项目负责人</h3><p>总体技术方案（A3）、任务分解、汇报口径、汇总汇报（A11）。</p></div>
+        <div class="card"><h3>② 环境与算力</h3><p>装 HOOPS AI、配授权、处置坑、定算力（A1）。</p></div>
+        <div class="card"><h3>③ 数据与检索</h3><p>数据核定（A2）、小批量（A4/A5）、全量入库（A7）。</p></div>
+        <div class="card"><h3>④ 评测与质量</h3><p>自检（A6）、标注（A8）、真实评测（A9）、对照（A10）。</p></div>
+      </div>
+      <p style="font-size:13px;color:var(--dim)">详细分工见顶部「模块分工」板块。</p>
+    </div>
+
+    <!-- 技术路线 -->
+    <h2 id="route">技术路线演变</h2>
+    <div class="timeline">
+      <div class="tl-item"><div class="ph">阶段一 · 2026-09（已归档）</div><div class="t">BRepNet 路线</div><div class="d">Autodesk 学术模型，借用"面分割"中间结果做检索。已跑通合成实验（6/6 自身 Top-1），因旧依赖装不上、真实零件零推理而归档。</div></div>
+      <div class="tl-item"><div class="ph">阶段二 · 2026-11 起（当前主线）</div><div class="t">HOOPS 路线</div><div class="d">Tech Soft 3D 商业工具，自带"读零件→编码→建索引→检索"成品链路，对接 10 万 STEP 零件。当前处于"环境待打通"阶段。</div></div>
+    </div>
+
+    <!-- 技术成果（折叠卡片） -->
+    <h2>技术成果（点击展开）</h2>
+    <details class="fold">
+      <summary>BRepNet 模型性能（论文与官方仓库）</summary>
+      <div class="fb">
+        <div class="grid cols-2">
+          <div class="card"><h3>论文报告结果</h3><div class="grid cols-2"><div class="card" style="padding:12px"><div class="kpi" style="color:var(--blue2);font-size:24px">92.52%</div><div class="lbl">分割准确率</div></div><div class="card" style="padding:12px"><div class="kpi" style="color:var(--purple);font-size:24px">77.10%</div><div class="lbl">平均 IoU</div></div></div></div>
+          <div class="card"><h3>仓库 25 个示例</h3><div class="grid cols-2"><div class="card" style="padding:12px"><div class="kpi" style="color:var(--teal);font-size:24px">89.96%</div><div class="lbl">Accuracy</div></div><div class="card" style="padding:12px"><div class="kpi" style="color:var(--green);font-size:24px">80.82%</div><div class="lbl">Mean IoU</div></div></div></div>
+        </div>
+      </div>
+    </details>
+    <details class="fold">
+      <summary>我们自己的验证成果</summary>
+      <div class="fb">
+        <p>复现并工程化了 BRepNet 检索评分方法（脚本约 290 行、仅依赖 NumPy），6 个合成模型上 <b style="color:var(--green)">6/6 自身 Top-1、命中率 100%、自身得分全 0</b>，12 项单元测试全部通过。</p>
+        <p style="font-size:13.5px;color:var(--dim)">注意：自身检索 100% 是数学必然（自己跟自己比距离为 0），只是"管线自检"，不能当检索准确率。</p>
+      </div>
+    </details>
+
+    <!-- 核心概念 -->
+    <h2>核心概念（悬停看解释）</h2>
+    <div class="grid cols-2">
+      <div class="concept"><b>STEP 文件（.stp）</b><p>三维零件的通用格式，用"面、边"描述形状。库里 10 万个零件都是它。</p></div>
+      <div class="concept"><b>嵌入（向量）</b><p>把零件转成一串数字。越像的零件数字越接近，是检索的基础。</p></div>
+      <div class="concept"><b>FAISS 索引</b><p>一种"快速找最接近向量"的技术，索引能存盘复用，省去重复计算。</p></div>
+      <div class="concept"><b>自检索 / 自检</b><p>让系统检索"它自己"来验证链路没接错。自检 100% 不等于检索准确率。</p></div>
+    </div>
+
+    <!-- 当前进展（进度条） -->
+    <h2 id="progress">当前进展</h2>
+    <div class="progress-block">
+      <div class="progress-item"><div class="pl"><span>BRepNet 检索代码（已完成）</span><span class="pv">100%</span></div><div class="bar"><div class="fill green" style="width:100%"></div></div></div>
+      <div class="progress-item"><div class="pl"><span>HOOPS 环境与授权（当前卡点）</span><span class="pv">约 15%</span></div><div class="bar"><div class="fill amber" style="width:15%"></div></div></div>
+      <div class="progress-item"><div class="pl"><span>小批量真实试跑</span><span class="pv">0%</span></div><div class="bar"><div class="fill" style="width:0%"></div></div></div>
+      <div class="progress-item"><div class="pl"><span>全量入库 + 真实评测</span><span class="pv">0%</span></div><div class="bar"><div class="fill" style="width:0%"></div></div></div>
+      <p style="font-size:13px;color:var(--dim);margin-top:14px">整体进度约 25%：检索链路已跑通，下一步是打通环境并跑真实数据。</p>
+    </div>
+  </section>
+
+    <!-- ============ 模块分工 ============ -->
+  <section class="page" id="page-division">
+    <h1>模块分工</h1>
+    <p class="sub">团队 10 人（1 名负责人 + 9 名成员）各司其职。点击卡片展开查看详细任务；每张卡里都标了该角色<b style="color:var(--text)">对应执行计划的阶段与步骤</b>，点一下可直接跳到执行计划对应位置。</p>
+    <div id="roleList"></div>
+
+    <h2>协作依赖关系</h2>
+    <div class="card">
+      <p style="font-family:ui-monospace,Consolas,monospace;font-size:14px;color:var(--text);line-height:2">②③环境 A1 ──→ ⑤数据 A4 → ⑥检索 A5 ──→ ⑨评测 A6<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;④算力 A1 ─┘&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⑦全量 A7 ──┐<br>①方案 A3（可立即启动）&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⑧标注 A8 ──┤<br>④数据 A2（可并行）&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⑨ A9 ──→ ①⑩ A11（最终汇报）</p>
+      <p style="font-size:13.5px;margin-top:12px">关键路径（串行）：<b style="color:var(--text)">A1 → A4 → A5 → A6 → A7 → A9 → A11</b>。其中 ① 的方案 A3、④ 的数据核定 A2 不依赖环境，第一天就能开工。</p>
+    </div>
+  </section>
+
+<!-- ============ 资料库 ============ -->
+  <section class="page" id="page-library">
+    <h1>资料库</h1>
+    <p class="sub">集中管理项目全部资料，支持搜索、分类过滤、点击展开阅读全文、打开对应文件。</p>
+    <div class="toolbar">
+      <div class="search"><span class="ic">🔍</span><input type="text" id="searchInput" placeholder="搜索标题、关键词、全文内容…"></div>
+      <div class="chips" id="catChips">
+        <button class="chip active" data-cat="all">全部</button>
+        <button class="chip" data-cat="报告文档">报告文档</button>
+        <button class="chip" data-cat="项目计划">项目计划</button>
+        <button class="chip" data-cat="代码文件">代码文件</button>
+        <button class="chip" data-cat="分工说明">分工说明</button>
+        <button class="chip" data-cat="实验结果">实验结果</button>
+        <button class="chip" data-cat="数据资产">数据资产</button>
+      </div>
+      <span class="count" id="resultCount"></span>
+    </div>
+    <div class="doc-list" id="docList"></div>
+  </section>
+
+  <!-- ============ 目录索引 ============ -->
+  <section class="page" id="page-index">
+    <h1>资料目录索引</h1>
+    <p class="sub">结构化目录，点击可直接打开对应文件。</p>
+    <div class="toc" id="tocList"></div>
+  </section>
+
+    <!-- ============ 执行计划 ============ -->
+  <section class="page" id="page-plan">
+    <h1>执行计划</h1>
+    <p class="sub">全员并行、两人结对。每个任务都由<b style="color:var(--text)">2 名成员一起做</b>，10 个人在每一个阶段都被派到具体任务，<b style="color:var(--text)">没有一个人闲着</b>。每个步骤都标明「<b style="color:var(--teal)">交付人</b>」和「交付物作用」，与「模块分工」<b style="color:var(--text)">一一对应</b>。</p>
+
+    <div class="tl-legend">
+      <span class="lg"><span class="dot do"></span> 环境线（硬阻塞，最先突破）</span>
+      <span class="lg"><span class="dot dt"></span> 数据线</span>
+      <span class="lg"><span class="dot al"></span> 算法线</span>
+      <span class="lg"><span class="dot ev"></span> 评测线</span>
+    </div>
+
+    <div class="phase" id="phase-1">
+      <div class="ph-t"><span class="ph-num">阶段一</span> 启动并突破环境（第 1~2 周）</div>
+      <div class="ph-d">目标：环境打通是唯一硬阻塞，但<b style="color:var(--text)">它不妨碍其他线开工</b>。本阶段 10 人全部结对上岗：环境组（②③）攻坚授权、数据组（④⑤）清点资产、方案组（①+一名成员）定方案、评测组（⑧⑨）定口径、算法组（⑥⑦）精读文档、文档组（⑩，与①结对）搭框架——<b style="color:var(--text)">没有"技术预备"的空角色</b>。</div>
+      <div class="stage-roles">
+        <div class="sr main"><div class="sr-name">⭐ ② 环境搭建 + ③ 算力基础设施</div><div class="sr-task">两人结对：装 HOOPS AI、配授权、处置三个坑、最小测试（A1）→ 交付《环境搭建手册》+ 算力方案 → <b>给全团队用：是 A5/A7 能跑的前提</b></div></div>
+        <div class="sr main"><div class="sr-name">⭐ ④ 数据核定 + ⑤ 子集构建</div><div class="sr-task">两人结对：清点 10 万 STEP 数据（A2）→ 交付数据资产清单 → <b>给⑥抽子集、⑧定相似口径当底账</b></div></div>
+        <div class="sr main"><div class="sr-name">⭐ ① 负责人（+ 一名成员）</div><div class="sr-task">两人结对：写《总体技术方案》、任务分解、定每周计划（A3）→ 交付方案文档 + 分工表 → <b>是所有成员"接下来做什么"的依据</b></div></div>
+        <div class="sr main"><div class="sr-name">⭐ ⑧ 评测集标注 + ⑨ 评测指标</div><div class="sr-task">两人结对：起草"相似"判定口径、预选评测查询零件 → 交付评测口径草案 → <b>是阶段三 A8/A9 的地基</b></div></div>
+        <div class="sr main"><div class="sr-name">⭐ ⑥ 检索算法 + ⑦ 全量性能</div><div class="sr-task">两人结对：精读 HOOPS 官方文档与 5b 示例、搭检索脚本骨架 → 交付检索脚本初稿 → <b>缩短阶段二启动时间</b></div></div>
+        <div class="sr main"><div class="sr-name">⭐ ⑩ 文档前端（与①结对）</div><div class="sr-task">搭项目网站骨架、写《环境搭建手册》模板、建立文档规范 → 交付网站 + 文档模板 → <b>后续所有交付物按此归档</b></div></div>
+      </div>
+      <div class="step" id="phase-1-step-1">
+        <div class="st-t"><span class="st-num">第 1 步</span> 选定运行环境 <span class="who">② 环境 + ③ 算力</span></div>
+        <div class="row"><b>内容：</b><span class="v">调研 HOOPS AI 官方文档，在 Linux / WSL / Docker 中选一种（优先 WSL 或 Docker）。</span></div>
+        <div class="goal"><b>目标：</b>定下运行环境方案并记录。</div>
+        <div class="use"><b>交付人：②③ 共同交付。</b><b>交付物作用：</b>是后续安装/运行的前提，写进《环境搭建手册》第一章。</div>
+      </div>
+      <div class="step" id="phase-1-step-2">
+        <div class="st-t"><span class="st-num">第 2 步</span> 安装 HOOPS AI 及依赖 <span class="who">② 环境 + ③ 算力</span></div>
+        <div class="row"><b>内容：</b><span class="v">装底层库（libglu1-mesa、xvfb 等），再用 conda/pip 装 hoops_ai、torch、dgl、pytorch_lightning、faiss。</span></div>
+        <div class="goal"><b>目标：</b>所有依赖安装完成、无报错。</div>
+        <div class="use"><b>交付人：②③ 共同交付。</b><b>交付物作用：</b>可运行的 Python 环境，是 A5「小批量试跑」直接复用。</div>
+      </div>
+      <div class="step" id="phase-1-step-3">
+        <div class="st-t"><span class="st-num">第 3 步</span> 配置授权并验证 <span class="who">② 环境 + ③ 算力</span></div>
+        <div class="row"><b>内容：</b><span class="v">配置 license 密钥（记录在 hoops_readme.md 中），写一段最小测试代码。</span></div>
+        <div class="goal"><b>目标：</b>运行 <code class="ft-c">import hoops_ai</code> 不报错。</div>
+        <div class="use"><b>交付人：②③ 共同交付。</b><b>交付物作用：</b>license 配置记录，⑥ 检索算法据此调 SDK。</div>
+      </div>
+      <div class="step" id="phase-1-step-4">
+        <div class="st-t"><span class="st-num">第 4 步</span> 处置三个已知坑 + 最小测试 <span class="who">② 环境 + ③ 算力</span></div>
+        <div class="row"><b>内容：</b><span class="v">①补全缺失的 cad_tasks.py；②确认能否直接读 .stp；③补全缺失依赖；验证能读 1 个 .stp。</span></div>
+        <div class="goal"><b>目标：</b>三个坑都有处置结论，能读 1 个真实 STEP 文件。</div>
+        <div class="use"><b>交付人：②③ 共同交付。</b><b>交付物作用：</b>「能读 .stp」是整个项目最关键的里程碑，直接解锁阶段二。</div>
+      </div>
+      <div class="step" id="phase-1-step-5">
+        <div class="st-t"><span class="st-num">第 5 步</span> 清点数据资产（A2，与安装并行） <span class="who">④ 数据 + ⑤ 子集</span></div>
+        <div class="row"><b>内容：</b><span class="v">清点 10 万 .stp 的数量、大小、目录结构，确认来源与使用范围。</span></div>
+        <div class="goal"><b>目标：</b>产出一份数据资产清单。</div>
+        <div class="use"><b>交付人：④⑤ 共同交付。</b><b>交付物作用：</b>是⑥抽子集、⑧定相似口径的底账。</div>
+      </div>
+      <div class="step" id="phase-1-step-6">
+        <div class="st-t"><span class="st-num">第 6 步</span> 产出总体技术方案与任务分解（A3） <span class="who">① 负责人 + 一名成员</span></div>
+        <div class="row"><b>内容：</b><span class="v">定主线模型、三段产物形态、模块依赖顺序，把 A1~A11 拆到每个成员。</span></div>
+        <div class="goal"><b>目标：</b>方案文档 + 分工表落地。</div>
+        <div class="use"><b>交付人：①与另一名成员共同交付。</b><b>交付物作用：</b>是所有成员"接下来做什么"的依据，也驱动每周计划滚动更新。</div>
+      </div>
+    </div>
+
+    <div class="phase" id="phase-2">
+      <div class="ph-t"><span class="ph-num">阶段二</span> 小批量跑通（第 2~3 周）</div>
+      <div class="ph-d">目标：环境一解锁，全员结对并行推进——数据组抽子集、算法组跑链路、评测组做自检、环境组兜底、方案组盯进度、文档组记录成果。</div>
+      <div class="stage-roles">
+        <div class="sr main"><div class="sr-name">⭐ ⑤ 子集构建 + ④ 数据核定</div><div class="sr-task">两人结对：建小批量子集（A4）→ 交付小批量子集 → <b>是⑥试跑、⑨自检的输入数据</b></div></div>
+        <div class="sr main"><div class="sr-name">⭐ ⑥ 检索算法 + ⑦ 全量性能</div><div class="sr-task">两人结对：小批量端到端试跑（A5）→ 交付索引文件 + 检索脚本 → <b>是全量 A7 的模板，也是第一个真实产物</b></div></div>
+        <div class="sr main"><div class="sr-name">⭐ ⑨ 评测指标 + ⑧ 评测集标注</div><div class="sr-task">两人结对：管线自检（A6）+ 起草相似口径 → 交付自检结论 → <b>确认链路接对，是全量评测 A9 的前提</b></div></div>
+        <div class="sr"><div class="sr-name">②③ 环境算力</div><div class="sr-task">两人结对：环境维护、解决试跑中的环境/算力问题 → <b>保障小批量不因环境卡住</b></div></div>
+        <div class="sr"><div class="sr-name">① 负责人 + 一名成员</div><div class="sr-task">两人结对：周会协调、盯进度、更新任务表与时间线 → <b>保证各线不脱节</b></div></div>
+        <div class="sr"><div class="sr-name">⑩ 文档前端（与①结对）</div><div class="sr-task">记录小批量结果、更新网站进度、做第一次成果展示 → <b>沉淀第一个可展示成果</b></div></div>
+      </div>
+      <div class="step" id="phase-2-step-1">
+        <div class="st-t"><span class="st-num">第 1 步</span> 建立小批量试验子集（A4） <span class="who">⑤ 子集 + ④ 数据</span></div>
+        <div class="row"><b>内容：</b><span class="v">从 10 万里抽几十~几百个有代表性的 .stp，单独归档。</span></div>
+        <div class="goal"><b>目标：</b>子集建好、数量明确、能代表整体。</div>
+        <div class="use"><b>交付人：④⑤ 共同交付。</b><b>交付物作用：</b>⑥ 试跑和 ⑨ 自检的数据输入。</div>
+      </div>
+      <div class="step" id="phase-2-step-2">
+        <div class="st-t"><span class="st-num">第 2 步</span> 小批量端到端试跑（A5） <span class="who">⑥ 检索 + ⑦ 全量</span></div>
+        <div class="row"><b>内容：</b><span class="v">照官方 5b 检索示例，跑通"嵌入→FAISS 建索引→检索"，save_shape_index 存盘、load_shape_index 验证。</span></div>
+        <div class="goal"><b>目标：</b>索引能存盘、能加载、检索能返回结果——第一个真实产物。</div>
+        <div class="use"><b>交付人：⑥⑦ 共同交付。</b><b>交付物作用：</b>索引+脚本是 A7 全量入库直接套用的模板，也是对外演示的第一份成果。</div>
+      </div>
+      <div class="step" id="phase-2-step-3">
+        <div class="st-t"><span class="st-num">第 3 步</span> 管线自检（A6） <span class="who">⑨ 评测 + ⑧ 标注</span></div>
+        <div class="row"><b>内容：</b><span class="v">拿小批量结果做自检索，确认链路没接错。</span></div>
+        <div class="goal"><b>目标：</b>自检索命中 100%、自身分 0（这只是自检，不是准确率）。</div>
+        <div class="use"><b>交付人：⑧⑨ 共同交付。</b><b>交付物作用：</b>确认管线正确，才有资格进入 A9 真实评测。</div>
+      </div>
+    </div>
+
+    <div class="phase" id="phase-3">
+      <div class="ph-t"><span class="ph-num">阶段三</span> 全量入库与真实评测（第 3~4 周）</div>
+      <div class="ph-d">目标：小批量验证成功后，全员结对进入收尾攻坚——全量入库、标注评测集、跑真实指标三线并行，环境组保障算力、数据组兜底质量。</div>
+      <div class="stage-roles">
+        <div class="sr main"><div class="sr-name">⭐ ⑦ 全量性能 + ③ 算力基础设施</div><div class="sr-task">两人结对：全量入库 + 索引存盘（A7）→ 交付全量检索库 + 耗时报告 → <b>是项目的最终可交付资产</b></div></div>
+        <div class="sr main"><div class="sr-name">⭐ ⑧ 评测集标注 + ④ 数据核定</div><div class="sr-task">两人结对：定相似口径 + 标注评测集（A8）→ 交付评测集 → <b>是⑨算 Recall@k / mAP 的唯一依据</b></div></div>
+        <div class="sr main"><div class="sr-name">⭐ ⑨ 评测指标 + ⑥ 检索算法</div><div class="sr-task">两人结对：排除自身真实评测（A9）→ 交付指标报告 → <b>直接回答"能否找到相似零件"</b></div></div>
+        <div class="sr"><div class="sr-name">② 环境搭建</div><div class="sr-task">环境兜底、维护检索库运行 → <b>确保全量入库与评测稳定</b></div></div>
+        <div class="sr"><div class="sr-name">① 负责人 + 一名成员</div><div class="sr-task">两人结对：协调三线并行、把控里程碑、开始整理汇报材料 → <b>为阶段四收口做准备</b></div></div>
+        <div class="sr"><div class="sr-name">⑩ 文档前端（与①结对）</div><div class="sr-task">记录指标、更新网站、做结果可视化 → <b>把指标变成可展示的图</b></div></div>
+      </div>
+      <div class="step" id="phase-3-step-1">
+        <div class="st-t"><span class="st-num">第 1 步</span> 全量入库（A7） <span class="who">⑦ 全量 + ③ 算力</span></div>
+        <div class="row"><b>内容：</b><span class="v">10 万零件全部批量嵌入、建索引、存盘，记录总耗时。</span></div>
+        <div class="goal"><b>目标：</b>全量索引存盘成功、耗时记录在案，建成可复用检索库。</div>
+        <div class="use"><b>交付人：⑦③ 共同交付。</b><b>交付物作用：</b>可复用检索库是项目核心资产，也是⑨评测的"被测对象"。</div>
+      </div>
+      <div class="step" id="phase-3-step-2">
+        <div class="st-t"><span class="st-num">第 2 步</span> 定义相似并标注评测集（A8，可与第 1 步并行） <span class="who">⑧ 标注 + ④ 数据</span></div>
+        <div class="row"><b>内容：</b><span class="v">明确"相似"判定口径（形状/局部特征/类别），标一小批评测集。</span></div>
+        <div class="goal"><b>目标：</b>评测集标注完成、口径明确、可复核。</div>
+        <div class="use"><b>交付人：⑧④ 共同交付。</b><b>交付物作用：</b>评测集是⑨算指标的地基，口径决定指标的可信度。</div>
+      </div>
+      <div class="step" id="phase-3-step-3">
+        <div class="st-t"><span class="st-num">第 3 步</span> 排除自身的真实评测（A9） <span class="who">⑨ 评测 + ⑥ 检索</span></div>
+        <div class="row"><b>内容：</b><span class="v">排除查询自身后跑真实检索，计算 Recall@k、mAP。</span></div>
+        <div class="goal"><b>目标：</b>产出一份带指标数字的评测报告。</div>
+        <div class="use"><b>交付人：⑨⑥ 共同交付。</b><b>交付物作用：</b>指标报告是回答"能否找到相似零件"的最终证据，直接进汇报材料。</div>
+      </div>
+    </div>
+
+    <div class="phase" id="phase-4">
+      <div class="ph-t"><span class="ph-num">阶段四</span> 汇总与汇报（第 4 周）</div>
+      <div class="ph-d">目标：全团队一起收口——各线结对整理本线成果，⑩ 统一成汇报材料，① 汇总对外交付，⑨ 视情况补对照实验。</div>
+      <div class="stage-roles">
+        <div class="sr main"><div class="sr-name">⭐ ① 负责人 + 一名成员</div><div class="sr-task">两人结对：汇总所有人成果、整理汇报材料（A11）→ 交付汇报材料 → <b>对外交付的唯一出口</b></div></div>
+        <div class="sr main"><div class="sr-name">⭐ ⑩ 文档前端 + ⑨ 评测指标</div><div class="sr-task">两人结对：文档整理、PPT 制作、网站维护、结果可视化 → 交付 PPT + 可视化 → <b>把技术成果变成能讲的故事</b></div></div>
+        <div class="sr"><div class="sr-name">②③ 环境算力组</div><div class="sr-task">两人结对：整理环境/算力成果、补文档细节 → <b>保证材料里环境线有据可查</b></div></div>
+        <div class="sr"><div class="sr-name">④⑤ 数据组</div><div class="sr-task">两人结对：整理数据/子集成果、补文档细节 → <b>保证材料里数据线有据可查</b></div></div>
+        <div class="sr"><div class="sr-name">⑥⑦ 算法组</div><div class="sr-task">两人结对：整理检索/全量成果、补文档细节 → <b>保证材料里算法线有据可查</b></div></div>
+        <div class="sr"><div class="sr-name">⑧ 评测集标注</div><div class="sr-task">整理评测集口径、补文档细节 → <b>保证评测口径可复核</b></div></div>
+      </div>
+      <div class="step" id="phase-4-step-1">
+        <div class="st-t"><span class="st-num">第 1 步</span> 整理汇报材料（A11） <span class="who">① 负责人 + ⑩ 文档前端</span></div>
+        <div class="row"><b>内容：</b><span class="v">汇总环境、数据、检索、评测四块成果，按"背景→进度→结果→下一步"整理。</span></div>
+        <div class="goal"><b>目标：</b>交付一份可对外汇报的材料。</div>
+        <div class="use"><b>交付人：①⑩ 共同交付。</b><b>交付物作用：</b>对外交付的最终成果，老师/评审据此评价项目。</div>
+      </div>
+      <div class="step" id="phase-4-step-2">
+        <div class="st-t"><span class="st-num">第 2 步</span> 稳健性/对照实验（A10，可选） <span class="who">⑨ 评测 + ⑧ 标注</span></div>
+        <div class="row"><b>内容：</b><span class="v">视阶段一环境结论，决定是否做扰动测试或 BRepNet 对照。</span></div>
+        <div class="goal"><b>目标：</b>视需要补充扩展验证。</div>
+        <div class="use"><b>交付人：⑧⑨ 共同交付。</b><b>交付物作用：</b>提升指标可信度，让结论更扎实。</div>
+      </div>
+    </div>
+
+    <h2>任务总表（A1~A11）</h2>
+    <div class="doc-list" id="taskList"></div>
+  </section>
+
+</main>
+
+<footer>三维相似性搜索平台 · 项目全景　|　由 WorkBuddy 生成　|　数据截至 2026-11-08</footer>
+
+<script>
+const docs = (typeof window.__DOCS__ !== 'undefined') ? window.__DOCS__ : [];
+const tasks = [
+  {id:"A1", ph:"P0", t:"打通 Linux + HOOPS AI 环境与授权", d:"唯一硬阻塞，起点。验收：能 import hoops_ai + 读 1 个 .stp。", who:"②③ 环境/算力", use:"环境是全项目唯一硬阻塞，环境不通 A5/A7 全部停摆。"},
+  {id:"A2", ph:"P0", t:"核定 10 万 STEP 数据资产", d:"产出文件清单，确认数据来源。可并行。", who:"④ 数据核定", use:"数据清单是抽子集、定相似口径的底账。"},
+  {id:"A3", ph:"P0", t:"产出总体技术方案与任务分解", d:"定主线模型、三段产物形态、模块依赖。可立即启动。", who:"① 负责人 + 一名成员", use:"方案与分工表是所有人接下来做什么的依据。"},
+  {id:"A4", ph:"P0", t:"建立小批量试验子集", d:"抽几十~几百个 .stp 做验证集。", who:"⑤ 子集构建", use:"子集是检索试跑与自检的输入数据。"},
+  {id:"A5", ph:"P0", t:"小批量端到端试跑", d:"嵌入→FAISS→检索，索引存盘。第一个真实产物。", who:"⑥ 检索算法", use:"小批量索引+脚本是全量入库 A7 的模板，也是第一个真实产物。"},
+  {id:"A6", ph:"P1", t:"管线自检（自检索）", d:"确认链路接对，命中 100%、自身分 0（非准确率）。", who:"⑨ 评测指标", use:"确认管线正确，才有资格进入真实评测。"},
+  {id:"A7", ph:"P1", t:"全量入库：10 万批量嵌入 + 索引存盘", d:"记录总耗时，建成可复用检索库。", who:"⑦ 全量性能", use:"全量检索库是最终核心资产，也是评测的被测对象。"},
+  {id:"A8", ph:"P1", t:"定义相似并标注一小批评测集", d:"明确相似口径，产出标注集。", who:"⑧ 评测集标注", use:"评测集是算指标的唯一依据，口径决定可信度。"},
+  {id:"A9", ph:"P1", t:"排除自身的真实相似检索评测", d:"算 Recall@k / mAP，真正检验检索能力。", who:"⑨ 评测指标", use:"指标报告是回答能否找到相似零件的最终证据。"},
+  {id:"A10", ph:"P2", t:"稳健性 / 对照实验（可选）", d:"视 A1 结论决定是否启动。", who:"⑨ 评测指标", use:"提升指标可信度，让结论更扎实。"},
+  {id:"A11", ph:"P2", t:"整理阶段性汇报材料", d:"汇总成果对外交付。", who:"① 负责人 + ⑩ 文档前端", use:"对外交付的最终成果，评审据此评价项目。"}
+];
+const navLinks = document.getElementById('navLinks');
+const burger = document.getElementById('burger');
+function switchPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-links button').forEach(b=>b.classList.toggle('active', b.dataset.page===name));
+  navLinks.classList.remove('open');
+  window.scrollTo({top:0});
+}
+navLinks.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>switchPage(b.dataset.page)));
+burger.addEventListener('click',()=>navLinks.classList.toggle('open'));
+
+const catChipColors = {"报告文档":"cat-report","项目计划":"cat-plan","代码文件":"cat-code","分工说明":"cat-doc","实验结果":"cat-data","数据资产":"cat-data"};
+const docList = document.getElementById('docList');
+const searchInput = document.getElementById('searchInput');
+const resultCount = document.getElementById('resultCount');
+let activeCat = 'all';
+function renderDocs(){
+  const q = searchInput.value.trim().toLowerCase();
+  const filtered = docs.filter(d=>{
+    const okCat = activeCat==='all' || d.cat===activeCat;
+    const hay = (d.title+' '+d.kw.join(' ')+' '+d.sum).toLowerCase();
+    return okCat && (!q || hay.includes(q));
+  });
+  resultCount.textContent = '共 '+filtered.length+' 条';
+  docList.innerHTML = filtered.map(d=>{
+    const cClass = catChipColors[d.cat]||'';
+    const flink = d.file ? '<a class="flink" href="'+d.file+'" target="_blank" onclick="event.stopPropagation()">📂 打开文件</a>' : '';
+    return '<div class="doc" data-id="'+d.id+'">'+
+      '<div class="top"><span class="tt">'+d.title+'</span>'+
+      '<div class="meta"><span class="badge '+cClass+'">'+d.cat+'</span>'+
+      '<span class="badge">'+d.type+'</span><span class="badge">'+d.date+'</span></div></div>'+
+      '<div class="sum">'+d.sum+'</div>'+
+      flink +
+      '<div class="hint">📖 点击卡片展开阅读全文</div>'+
+      '<div class="detail">'+(d.fulltext||'')+'</div></div>';
+  }).join('');
+  docList.querySelectorAll('.doc').forEach(el=>{
+    el.addEventListener('click',()=>el.classList.toggle('open'));
+  });
+}
+document.getElementById('catChips').querySelectorAll('.chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('#catChips .chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active'); activeCat=c.dataset.cat; renderDocs();
+  });
+});
+searchInput.addEventListener('input', renderDocs);
+renderDocs();
+
+/* 目录索引：从 docs 数据生成带链接的目录 */
+const tocList = document.getElementById('tocList');
+const tocGroups = [
+  ["一、早期报告（BRepNet 路线，已归档）", ["报告文档"]],
+  ["二、项目计划（HOOPS 路线，当前主线）", ["项目计划"]],
+  ["三、代码文件", ["代码文件"]],
+  ["四、分工说明", ["分工说明"]],
+  ["五、实验结果", ["实验结果"]],
+  ["六、数据资产", ["数据资产"]]
+];
+tocList.innerHTML = tocGroups.map(g=>{
+  const items = docs.filter(d=>g[1].includes(d.cat));
+  const itemHtml = items.map(d=>{
+    const b = d.type.split('/')[0];
+    const link = d.file ? ' <a href="'+d.file+'" target="_blank">打开 ↗</a>' : '';
+    return '<div class="item"><span class="b">'+b+'</span> '+d.title+link+'</div>';
+  }).join('');
+  return '<div class="sec"><div class="sec-t">'+g[0]+'</div>'+itemHtml+'</div>';
+}).join('');
+
+const taskList = document.getElementById('taskList');
+taskList.innerHTML = tasks.map(t=>{
+  const st = t.ph==='P0' ? '<span class="status doing"><span class="dot2"></span>P0 优先</span>'
+           : t.ph==='P1' ? '<span class="status todo"><span class="dot2"></span>P1</span>'
+           : '<span class="status hold"><span class="dot2"></span>P2 可选</span>';
+  return '<div class="doc" style="cursor:default">'+
+    '<div class="top"><span class="tt" style="color:var(--blue2)">'+t.id+'</span><span class="tt">'+t.t+'</span>'+
+    '<div class="meta">'+st+'<span class="badge">'+t.who+'</span></div></div>'+
+    '<div class="sum">'+t.d+(t.use ? ' <span class="use-inline">🔗 '+t.use+'</span>' : '')+'</div></div>';
+}).join('');
+
+/* 项目计划标签切换 */
+const planTabs = document.getElementById('planTabs');
+if(planTabs){
+  planTabs.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      planTabs.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('#page-intro .tab-panel').forEach(p=>p.classList.remove('active'));
+      const panel = document.getElementById('tab-'+btn.dataset.tab);
+      if(panel) panel.classList.add('active');
+    });
+  });
+}
+
+/* ============ 模块分工：10 人数据驱动渲染（负责人默认收起） ============ */
+const ROLES = [
+  {ic:'👑', name:'① 项目负责人', desc:'总协调 · 对外汇报唯一出口',
+   deputy:false,
+   pair:'与 ③ 算力基础设施协同',
+   stages:[
+     {ph:'phase-1', label:'阶段一', steps:['第 6 步 · 产出《总体技术方案》与任务分解（A3）','全程 · 组织周会、推动各线卡点']},
+     {ph:'phase-4', label:'阶段四', steps:['第 1 步 · 汇总所有人成果、整理汇报材料（A11）']}
+   ],
+   deliver:[['《总体技术方案》+ 任务分工表','A3 的交付物，是所有人"接下来做什么"的依据'],['阶段性汇报材料','A11 的交付物，对外交付的唯一出口'],['周会纪要','全程性交付物']],
+   use:'负责人的产出直接驱动整个项目的节奏：方案与分工表是全员行动依据，汇报材料是最终对外的成果。'},
+  {ic:'🔧', name:'② 环境搭建工程师', desc:'装软件 · 配授权 · 打通硬阻塞',
+   deputy:false,
+   pair:'与 ③ 算力基础设施结对',
+   stages:[
+     {ph:'phase-1', label:'阶段一', steps:['第 1 步 · 选定运行环境（与③结对）','第 2 步 · 安装 HOOPS AI 及依赖','第 3 步 · 配置 license 授权并验证','第 4 步 · 处置三个坑 + 最小测试']}
+   ],
+   deliver:[['可用运行环境 +《环境搭建手册》','阶段一第 1~4 步的交付物'],['license 验证记录','第 3 步的交付物'],['三个坑处置结论','第 4 步的交付物']],
+   use:'环境是全项目唯一硬阻塞：环境不通，A5/A7 全部停摆，所以本交付物优先级最高。'},
+  {ic:'🖥️', name:'③ 算力与部署基础设施', desc:'算力 · 环境载体',
+   deputy:false,
+   pair:'与 ② 环境搭建结对',
+   stages:[
+     {ph:'phase-1', label:'阶段一', steps:['第 1 步 · 选定运行环境（与②结对）','第 2~4 步 · 配合②完成安装/授权/测试']},
+     {ph:'phase-3', label:'阶段三', steps:['第 1 步 · 全量入库的算力保障（与⑦结对）']}
+   ],
+   deliver:[['算力方案 + 基础设施就绪','阶段一第 1 步的交付物'],['Windows 可行性结论','阶段一的交付物']],
+   use:'算力方案决定 10 万批量嵌入（A7）跑在哪、跑多快，是全量阶段的物理前提。'},
+  {ic:'🗄️', name:'④ 数据核定与清洗', desc:'数据盘点 · 清洗',
+   deputy:false,
+   pair:'与 ⑤ 子集构建结对',
+   stages:[
+     {ph:'phase-1', label:'阶段一', steps:['第 5 步 · 清点 10 万 STEP 数据（与⑤结对，A2）']},
+     {ph:'phase-2', label:'阶段二', steps:['第 1 步 · 与⑤结对建立小批量子集（A4）']},
+     {ph:'phase-3', label:'阶段三', steps:['第 2 步 · 与⑧结对核对评测集数据质量']}
+   ],
+   deliver:[['数据资产清单','阶段一第 5 步（A2）的交付物'],['数据清洗结论','阶段三的交付物']],
+   use:'数据清单是"从哪抽子集、抽多少"的底账，也是数据来源合规的凭证。'},
+  {ic:'📦', name:'⑤ 试验子集构建', desc:'抽样 · 建子集',
+   deputy:false,
+   pair:'与 ④ 数据核定结对',
+   stages:[
+     {ph:'phase-1', label:'阶段一', steps:['第 5 步 · 与④结对清点数据（A2）']},
+     {ph:'phase-2', label:'阶段二', steps:['第 1 步 · 建立小批量试验子集（A4）']}
+   ],
+   deliver:[['小批量试验子集','阶段二第 1 步（A4）的交付物']],
+   use:'子集是⑥检索试跑与⑨自检的输入数据，没有子集就无法端到端验证。'},
+  {ic:'🧮', name:'⑥ 检索算法工程', desc:'嵌入 · 建索引 · 检索',
+   deputy:false,
+   pair:'与 ⑦ 全量性能结对',
+   stages:[
+     {ph:'phase-1', label:'阶段一', steps:['与⑦结对精读 HOOPS 文档、搭脚本骨架']},
+     {ph:'phase-2', label:'阶段二', steps:['第 2 步 · 小批量端到端试跑（与⑦结对，A5）']},
+     {ph:'phase-3', label:'阶段三', steps:['第 3 步 · 与⑨结对真实评测（A9）']}
+   ],
+   deliver:[['索引文件 + 检索脚本','阶段二第 2 步（A5）的交付物']],
+   use:'小批量索引+脚本是第一个真实产物，也是全量入库 A7 直接套用的模板。'},
+  {ic:'⚡', name:'⑦ 全量与性能工程', desc:'全量入库 · 性能优化',
+   deputy:false,
+   pair:'与 ⑥ 检索算法结对',
+   stages:[
+     {ph:'phase-2', label:'阶段二', steps:['第 2 步 · 与⑥结对小批量试跑（A5）']},
+     {ph:'phase-3', label:'阶段三', steps:['第 1 步 · 全量入库：10 万批量嵌入 + 索引存盘（A7）']}
+   ],
+   deliver:[['全量检索库 + 耗时报告','阶段三第 1 步（A7）的交付物']],
+   use:'全量检索库是项目最终可交付的核心资产，也是评测的"被测对象"。'},
+  {ic:'🏷️', name:'⑧ 评测集与标注', desc:'定义相似 · 标注',
+   deputy:false,
+   pair:'与 ⑨ 评测指标结对',
+   stages:[
+     {ph:'phase-1', label:'阶段一', steps:['与⑨结对起草"相似"判定口径']},
+     {ph:'phase-3', label:'阶段三', steps:['第 2 步 · 定义相似并标注评测集（与④结对，A8）']}
+   ],
+   deliver:[['评测集（可复核）','阶段三第 2 步（A8）的交付物']],
+   use:'评测集是⑨算 Recall@k / mAP 的唯一依据，口径直接决定指标可信度。'},
+  {ic:'📊', name:'⑨ 评测与指标', desc:'自检 · 真实评测 · 指标',
+   deputy:false,
+   pair:'与 ⑧ 评测集标注结对',
+   stages:[
+     {ph:'phase-1', label:'阶段一', steps:['与⑧结对起草"相似"判定口径']},
+     {ph:'phase-2', label:'阶段二', steps:['第 3 步 · 管线自检（与⑧结对，A6）']},
+     {ph:'phase-3', label:'阶段三', steps:['第 3 步 · 排除自身的真实评测（与⑥结对，A9）']},
+     {ph:'phase-4', label:'阶段四', steps:['第 2 步 · 稳健性/对照实验（A10，可选）']}
+   ],
+   deliver:[['评测指标报告（Recall@k / mAP）','阶段三第 3 步（A9）的交付物']],
+   use:'指标报告是回答"能否找到相似零件"的最终证据，直接进汇报材料。'},
+  {ic:'📝', name:'⑩ 文档汇报与前端', desc:'文档 · PPT · 网站',
+   deputy:false,
+   pair:'与①负责人结对',
+   stages:[
+     {ph:'phase-1', label:'阶段一', steps:['与①协作搭网站骨架、写文档模板']},
+     {ph:'phase-4', label:'阶段四', steps:['第 1 步 · 与①结对整理汇报材料（A11）']}
+   ],
+   deliver:[['汇报材料 + 可视化成果','阶段四第 1 步（A11）的交付物']],
+   use:'把技术成果变成"能讲的故事"，是对外展示与评审评价的载体。本分工由一位同学专门负责，与①负责人结对完成汇报材料。'}
+];
+
+
+
+function renderRoles(){
+  document.getElementById('roleList').innerHTML = ROLES.map((r,i)=>{
+    const id = 'role-'+(i+1);
+    // 按阶段分组展示：每个步骤都精确对应执行计划，可点击跳转
+    const stagesHtml = (r.stages||[]).map(st=>{
+      const steps = st.steps.map(step=>{
+        // 提取"第 N 步"以生成跳转锚点，精确跳到执行计划对应的那一步
+        const m = step.match(/第\s*(\d+)\s*步/);
+        const anchor = st.ph + (m ? '-step-'+m[1] : '');
+        return '<li class="stage-step"><a href="#plan:'+anchor+'" class="step-link">'+step+'</a></li>';
+      }).join('');
+      return '<div class="stage-group"><div class="stage-label">🗂️ '+st.label+'</div><ul>'+steps+'</ul></div>';
+    }).join('');
+    const delivers = (r.deliver||[]).map(d=>'<li><span class="dv-name">'+d[0]+'</span><span class="dv-use">— '+d[1]+'</span></li>').join('');
+    return '<div class="role-card" id="'+id+'">'+
+      '<div class="role-head"><span class="role-ic">'+r.ic+'</span>'+
+      '<span class="role-name">'+r.name+'</span>'+
+      '<span class="role-desc">'+r.desc+'</span>'+
+      '<span class="role-arrow">▼</span></div>'+
+      '<div class="role-body">'+
+      (r.pair ? '<div class="pair-tag">🤝 '+r.pair+'</div>' : '')+
+      '<h4>📋 我在各阶段要做的（点击跳转到执行计划对应步骤）</h4>'+stagesHtml+
+      '<h4>✅ 交付物（与执行计划一一对应）</h4><ul>'+delivers+'</ul>'+
+      '<h4>🔗 交付物用来干什么</h4><div class="use-note">'+r.use+'</div>'+
+      '<div class="claim-box"><h4>🙋 认领分工（输入名字即认领）</h4><div class="claim-slot" data-role="'+i+'"></div></div>'+
+      '</div></div>';
+  }).join('');
+  // 手风琴：默认全部收起（含负责人），点一个展开、其余收起
+  document.querySelectorAll('#page-division .role-card').forEach(card=>{
+    card.querySelector('.role-head').addEventListener('click',()=>{
+      const isOpen = card.classList.contains('open');
+      document.querySelectorAll('#page-division .role-card').forEach(c=>c.classList.remove('open'));
+      if(!isOpen) card.classList.add('open');
+    });
+  });
+}
+renderRoles();
+
+/* ============ 在线认领分工 ============ */
+let CLAIMS = {};
+let MY_NAME = localStorage.getItem('cad_claim_name') || '';
+let MY_SLOT = localStorage.getItem('cad_claim_slot') !== null ? +localStorage.getItem('cad_claim_slot') : null;
+
+function renderClaims(){
+  document.querySelectorAll('.claim-slot').forEach(slot=>{
+    const i = +slot.dataset.role;
+    // 若该输入框正在聚焦/输入中，跳过重写，避免刷新清空正在输入的名字
+    const focused = slot.querySelector('.claim-input');
+    if(focused && document.activeElement === focused){ return; }
+    const holder = CLAIMS[String(i)];
+    if(holder){
+      const mine = (MY_SLOT === i && MY_NAME === holder);
+      slot.innerHTML = '<div class="claimed">已认领：<b>'+holder+'</b>'+
+        (mine ? ' <button class="release-btn" data-role="'+i+'">取消认领</button>' : '')+'</div>';
+    } else {
+      slot.innerHTML = '<div class="claim-row">'+
+        '<input class="claim-input" maxlength="20" placeholder="输入你的名字，点击认领">'+
+        '<button class="claim-btn" data-role="'+i+'">认领</button></div>';
+    }
+  });
+}
+
+async function loadClaims(){
+  try{
+    const r = await fetch('/api/claims?t='+Date.now());
+    if(r.ok) CLAIMS = await r.json();
+  }catch(e){ /* 本地打开时无后端，保持空 */ }
+  renderClaims();
+}
+
+async function postClaim(role, name, action){
+  try{
+    const r = await fetch('/api/claims', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({role: role, name: name, action: action})
+    });
+    if(r.ok) CLAIMS = await r.json();
+    else alert('该分工可能刚被别人认领，请刷新后再试');
+  }catch(e){ alert('提交失败：请在发布后的网页上使用认领功能'); }
+  renderClaims();
+}
+
+document.getElementById('roleList').addEventListener('click', function(e){
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  const role = +btn.dataset.role;
+  if(btn.classList.contains('claim-btn')){
+    const input = btn.parentElement.querySelector('.claim-input');
+    const name = (input.value||'').trim();
+    if(!name){ input.focus(); return; }
+    MY_NAME = name; MY_SLOT = role;
+    localStorage.setItem('cad_claim_name', name);
+    localStorage.setItem('cad_claim_slot', String(role));
+    postClaim(role, name, 'claim');
+  } else if(btn.classList.contains('release-btn')){
+    MY_SLOT = null;
+    localStorage.removeItem('cad_claim_slot');
+    postClaim(role, '', 'release');
+  }
+});
+
+setInterval(loadClaims, 5000);
+loadClaims();
+
+/* hash 路由：支持 #division / #plan / #plan:phase-N / #division:role-N 精确跳转 */
+function applyHash(){
+  const raw = location.hash.replace('#','');
+  if(!raw) return;
+  const parts = raw.split(':');
+  const page = parts[0];
+  const target = parts[1]||'';
+  const pages = ['intro','division','library','index','plan'];
+  if(pages.indexOf(page)>=0) switchPage(page);
+  if(target){
+    setTimeout(function(){
+      const el = document.getElementById(target);
+      if(!el) return;
+      if(target.indexOf('role-')===0){
+        document.querySelectorAll('#page-division .role-card').forEach(c=>c.classList.remove('open'));
+        el.classList.add('open');
+      }
+      el.scrollIntoView({behavior:'smooth', block:'start'});
+      el.classList.add('flash-target');
+      setTimeout(function(){el.classList.remove('flash-target');}, 2200);
+    }, 120);
+  } else {
+    window.scrollTo({top:0});
+  }
+}
+window.addEventListener('hashchange', applyHash);
+applyHash();
+</script>
+</body>
+</html>

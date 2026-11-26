@@ -1,0 +1,7 @@
+query,n_faces,self_rank,self_score,nearest_nonself,nonself_score
+bracket_A,4,1,0.000000,flange_A,163.197553
+bracket_B,5,1,0.000000,cover_A,177.882628
+cover_A,6,1,0.000000,bracket_B,212.422817
+flange_A,4,1,0.000000,bracket_A,162.769205
+housing_A,5,1,0.000000,bracket_B,185.066404
+shaft_A,6,1,0.000000,flange_A,283.084204
